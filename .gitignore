@@ -1,0 +1,9 @@
+public
+hot
+mix-manifest.json
+
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
