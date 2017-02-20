@@ -26,7 +26,7 @@
                 </div>
                 <nav class="level">
                     <div class="level-left">
-                        <a class="level-item" v-bind:href="tor.url" target="_blank" v-for="tor in movie.torrents">
+                        <a class="level-item" v-bind:href="getMagnetLink(movie, tor)" v-for="tor in movie.torrents">
                             <span class="button is-primary is-small">{{ tor.quality }}</span>
                         </a>
                     </div>
@@ -44,13 +44,41 @@
     export default{
         props: ['movie'],
         data(){
-            return{
-                msg:'hello vue'
+            return {
+                trackers: [
+                    'udp://open.demonii.com:1337/announce',
+                    'udp://tracker.openbittorrent.com:80',
+                    'udp://tracker.coppersurfer.tk:6969',
+                    'udp://glotorrents.pw:6969/announce',
+                    'udp://tracker.opentrackr.org:1337/announce',
+                    'udp://torrent.gresille.org:80/announce',
+                    'udp://p4p.arenabg.com:1337',
+                    'udp://tracker.leechers-paradise.org:6969',
+                ]
             }
         },
         methods: {
-            getYouTubeLink: function(movie) {
+            getYouTubeLink: function (movie) {
                 return "https://www.youtube.com/watch?v=" + movie.yt_trailer_code;
+            },
+
+            getMagnetLink: function (movie, tor) {
+                var url = 'magnet:?';
+
+                // URL (HASH)
+                url += 'xt=urn:btih:' + tor.hash;
+
+                // Title
+                url += '&dn=' + movie.title_long + ' - ' + tor.quality;
+
+                // Trackers
+                for (var i = 0, length = this.trackers.length; i < length; i++)
+                    url += '&tr=' + this.trackers[i];
+
+                // Topic
+                url += '&kt=Movie';
+
+                return encodeURI(url);
             }
         },
         created() {
