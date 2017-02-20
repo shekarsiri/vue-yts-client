@@ -1,79 +1,126 @@
 <template>
     <div>
-        <div v-if="data" class="container">
-            <nav class="level is-mobile">
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">Total</p>
-                        <p class="title">{{ data.movie_count }}</p>
-                    </div>
-                </div>
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">Loaded</p>
-                        <p class="title">{{ movies.length }}</p>
-                    </div>
-                </div>
-            </nav>
+        <div class="container">
 
-            <div class="box" v-for="movie in movies">
-                <article class="media">
-                    <div class="media-left" v-if="media">
-                        <figure class="image is-64x64">
-                            <img v-bind:src="movie.small_cover_image" alt="Image">
-                        </figure>
-                    </div>
-                    <div class="media-content">
-                        <div class="content">
-                            <p>
-                                <strong>{{ movie.title_long }}</strong>
-                                <small class="tag is-light">{{ movie.rating }}</small>
-                                <!--<small>31m</small>-->
-                                <br>
-                                {{ movie.description_full }}
-                            </p>
+            <div class="columns">
+                <div class="column is-one-quarter">
 
-                        </div>
-                        <nav class="level">
-                            <div class="level-left">
-                                <a class="level-item" v-bind:href="tor.url" target="_blank" v-for="tor in movie.torrents">
-                                    <span class="button is-primary is-small">{{ tor.quality }}</span>
-                                </a>
+                    <p class="control">
+                        <input type="text" class="input" v-model="settings.params.query_term" v-on:keyup="queryEntered"/>
+                    </p>
+
+                    <p class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="settings.media">
+                            Show Media
+                        </label>
+                    </p>
+
+                    <p class="control">
+                        <span class="select is-fullwidth">
+                            <select name="" v-model="settings.params.genre" v-on:change="reloadData()">
+                                <option value="">All</option>
+                                <option v-bind:value="opt" v-for="opt in generations">{{ opt }}</option>
+                            </select>
+                        </span>
+                    </p>
+
+                    <p class="control">
+                        <span class="select is-fullwidth">
+                            <select name="" id="" v-model="settings.params.sort_by" v-on:change="reloadData()">
+                                <option v-bind:value="opt" v-for="opt in sort_by">{{ opt }}</option>
+                            </select>
+                        </span>
+                    </p>
+
+                    <p class="control">
+                        <span class="select is-fullwidth">
+                            <select name="" v-model="settings.params.minimum_rating" v-on:change="reloadData()">
+                                <option value="8">8</option>
+                                <option value="7">7</option>
+                                <option value="6">6</option>
+                                <option value="5">5</option>
+                            </select>
+                        </span>
+                    </p>
+
+                    <a href="" class="button is-primary" @click.prevent="loadMore()">Load More</a>
+                </div>
+                <div class="column">
+                    <nav class="level is-mobile">
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Total</p>
+                                <p class="title">{{ total }}</p>
                             </div>
-                        </nav>
-                    </div>
-                </article>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Loaded</p>
+                                <p class="title">{{ movies.length }}</p>
+                            </div>
+                        </div>
+                    </nav>
+                    <!-- Movie List -->
+                    <movie-list :movies="movies" v-if="movies.length"></movie-list>
+                </div>
             </div>
-
-            <a href="" class="button is-primary" @click.prevent="loadMore()">Load More</a>
         </div>
     </div>
 </template>
 
 <script>
     //import router from '../routes'
+    import MovieList from '../components/MovieList.vue';
     import API from '../api';
+    import _ from 'underscore';
 
     export default{
         data(){
             return {
-                media: false,
-                data: null,
+                settings: null,
+                total: null,
                 movies: [],
-                params: {
-                    page: 2,
-                    limit: 15,
-                    sort_by: 'year',
-                    minimum_rating: 7
-                }
+                generations: [
+                    'Action',
+                    'Animation',
+                    'Comedy',
+                    'Documentary',
+                    'Family',
+                    'Film-Noir',
+                    'Horror',
+                    'Musical',
+                    'Romance',
+                    'Sport',
+                    'War',
+                    'Adventure',
+                    'Biography',
+                    'Crime',
+                    'Drama',
+                    'Fantacy',
+                    'History',
+                    'Music',
+                    'Mystery',
+                    'Sci-Fi',
+                    'Thriller'
+                ],
+                sort_by: [
+                    'title',
+                    'year',
+                    'rating',
+                    'peers',
+                    'seeds',
+                    'download_count',
+                    'like_count',
+                    'date_added'
+                ]
             }
         },
 
         methods: {
             fetchData: function () {
-                console.log(API);
-                API.getMovieList(this.params).then(function (res) {
-                    this.data = res.data.data;
+                API.getMovieList(this.settings.params).then(function (res) {
+                    this.total = res.data.data.movie_count;
                     this.movies = this.movies.concat(res.data.data.movies);
                 }.bind(this)).catch(function (error) {
                     console.log('failed...');
@@ -81,14 +128,29 @@
                 });
             },
 
-            loadMore: function() {
-                this.params.page++;
+            loadMore: function () {
+                this.settings.params.page++;
                 this.fetchData();
-            }
+            },
+
+            reloadData: function () {
+                this.movies = [];
+                this.settings.params.page = 1;
+                this.fetchData();
+            },
+
+            queryEntered: _.debounce(function(){
+                this.reloadData();
+            }, 500)
         },
 
         created() {
+            this.settings = API.settings;
             this.fetchData();
+        },
+
+        components: {
+            'movie-list': MovieList
         }
     }
 </script>
