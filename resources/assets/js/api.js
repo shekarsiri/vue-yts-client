@@ -1,18 +1,23 @@
 export default {
+    loading: false,
     settings: {
         media: false,
         params: {
             page: 1,
             limit: 10,
-            sort_by: 'year',
+            sort_by: 'date_added',
             minimum_rating: 7,
-            genre: 'Action',
+            genre: '',
             query_term: ''
         }
     },
     getMovieList (params) {
+        this.loading = true;
         return axios.get('https://yts.ag/api/v2/list_movies.json', {
-            params: params
+            params: params,
+            onDownloadProgress: function(progressEvent) {
+                //console.log(progressEvent);
+            }
         })
     }
 }
