@@ -13,7 +13,7 @@ export default {
     },
     getMovieList (params) {
         this.loading = true;
-        return axios.get('https://yts.ag/api/v2/list_movies.json', {
+        return axios.get('https://yts.am/api/v2/list_movies.json', {
             params: params,
             onDownloadProgress: function(progressEvent) {
                 //console.log(progressEvent);
